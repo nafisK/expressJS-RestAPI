@@ -1,4 +1,5 @@
 const express = require("express");
+const Joi = require("joi");
 const app = express();
 
 // adding a piece of middleware
@@ -20,9 +21,11 @@ app.get("/api/courses", (req, res) => {
 });
 
 app.post("/api/courses", (req, res) => {
+  // object destructuring
+  const { error } = validateCourse(req.body);
   // error validating url given
-  if (!req.body.name || req.body.name.length < 3) {
-    res.status(400).send("Name is required and should be 3 chars minimum.");
+  if (error) {
+    res.status(400).send(result.error.details[0].message);
     return;
   }
 
@@ -33,6 +36,33 @@ app.post("/api/courses", (req, res) => {
   courses.push(course);
   res.send(course);
 });
+
+app.put("/api/courses/:id", (req, res) => {
+  const course = courses.find((c) => c.id === parseInt(req.params.id));
+  if (!course)
+    res.status(404).send(`Course with id ${req.params.id} not found.`);
+
+  // object destructuring
+  const { error } = validateCourse(req.body);
+  // error validating url given
+  if (error) {
+    res.status(400).send(result.error.details[0].message);
+    return;
+  }
+
+  // everything good, update course
+  // return the updated courses
+  course.name = req.body.name;
+  res.send(course);
+});
+
+let validateCourse = (course) => {
+  const schema = Joi.object({
+    name: Joi.string().min(3).required(),
+  });
+
+  return schema.validate(course);
+};
 
 app.get("/api/courses/:id", (req, res) => {
   const course = courses.find((c) => c.id === parseInt(req.params.id));
